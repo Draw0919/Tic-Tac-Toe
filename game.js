@@ -1,4 +1,4 @@
-// game.js (Phase 2: Public Lobby 版本)
+// game.js (Phase 3: Animation 版本)
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -9,28 +9,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentRoomId = null;
     let currentAILevel = "none";
     let unsubscribeGameListener = null; 
-    let unsubscribeLobbyListener = null; // *** 新增：大廳監聽器 ***
+    let unsubscribeLobbyListener = null;
     let mctsWorker = null;
     let currentUser = null; 
 
     const difficultyLevels = {
         "簡單": 50, "中等": 500, "困難": 2000, "超困難": 10000
     };
+    
+    // *** 新增：勝利條件 (用於動畫) ***
+    const WIN_CONDITIONS = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // 橫
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // 豎
+        [0, 4, 8], [2, 4, 6]             // 斜
+    ];
 
-    // --- 獲取 DOM 元素 ---
+    // --- (DOM 元素獲取... 保持不變) ---
     const statusLabel = document.getElementById('status-label');
     const authFrame = document.getElementById('auth-frame');
     const btnGoogleLogin = document.getElementById('btn-google-login');
     const lobbyFrame = document.getElementById('lobby-frame');
     const userDisplayName = document.getElementById('user-display-name');
-    const btnSignOut = document.getElementById('btn-sign-out'); // 新
-    const publicLobbyList = document.getElementById('public-lobby-list'); // 新
-    
+    const btnSignOut = document.getElementById('btn-sign-out');
+    const publicLobbyList = document.getElementById('public-lobby-list');
     const gameInfoFrame = document.getElementById('game-info-frame');
     const roomIdDisplay = document.getElementById('room-id-display');
     const playerSymbolDisplay = document.getElementById('player-symbol-display');
     const gameVsDisplay = document.getElementById('game-vs-display'); 
-    
     const boardFrame = document.getElementById('board-frame');
     const restartButton = document.getElementById('restart-button');
     const aiDifficultySelect = document.getElementById('ai-difficulty-select');
@@ -39,13 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const roomIdInput = document.getElementById('room-id-input');
     const boardButtons = [];
 
-    // --- (初始化函式保持不變) ---
+    // --- (初始化函式... 保持不變) ---
     function initializeWorker() {
         if (window.Worker) {
             mctsWorker = new Worker('mcts_worker.js');
             mctsWorker.onmessage = function(e) {
-                const move = e.data;
-                onCellClick_AI(move);
+                onCellClick_AI(e.data);
             };
             mctsWorker.onerror = function(e) {
                 console.error("Worker 發生錯誤:", e.message);
@@ -66,40 +70,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Phase 1: Authentication 邏輯 (更新) ---
+    // --- (Auth 邏輯... 保持不變) ---
     function initializeAuth() {
         btnGoogleLogin.addEventListener('click', signInWithGoogle);
-        btnSignOut.addEventListener('click', signOut); // *** 新增：登出按鈕 ***
+        btnSignOut.addEventListener('click', signOut);
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                // === 玩家已登入 ===
-                currentUser = {
-                    uid: user.uid,
-                    displayName: user.displayName.split(' ')[0] 
-                };
-                
+                currentUser = { uid: user.uid, displayName: user.displayName.split(' ')[0] };
                 statusLabel.textContent = "已登入。請建立或加入房間";
                 userDisplayName.textContent = currentUser.displayName;
-                
                 authFrame.style.display = 'none';
-                lobbyFrame.style.display = 'flex'; // *** 改成 flex ***
-                
-                // *** 新增：開始監聽大廳 ***
+                lobbyFrame.style.display = 'flex';
                 listenForLobbyChanges();
-                
             } else {
-                // === 玩家已登出 ===
                 currentUser = null;
                 statusLabel.textContent = "請先登入以進入大廳";
-                
                 authFrame.style.display = 'block';
                 lobbyFrame.style.display = 'none';
-                
-                // *** 新增：停止監聽大廳 ***
                 if (unsubscribeLobbyListener) unsubscribeLobbyListener();
-                
-                leaveRoom(); // 確保離開所有遊戲
+                leaveRoom();
             }
         });
     }
@@ -116,27 +106,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function signOut() {
-        await auth.signOut(); // onAuthStateChanged 會自動處理後續
+        await auth.signOut();
     }
 
-    // --- Phase 2: Public Lobby 邏輯 (全新！) ---
-    
+    // --- (Lobby 邏輯... 保持不變) ---
     function listenForLobbyChanges() {
-        // 停止舊的監聽
         if (unsubscribeLobbyListener) unsubscribeLobbyListener();
-
-        // 查詢所有 'status' 為 'waiting' 的遊戲
         unsubscribeLobbyListener = db.collection('games')
             .where('status', '==', 'waiting')
             .onSnapshot((querySnapshot) => {
                 const games = [];
                 querySnapshot.forEach((doc) => {
-                    games.push({
-                        id: doc.id,
-                        data: doc.data()
-                    });
+                    games.push({ id: doc.id, data: doc.data() });
                 });
-                renderLobby(games); // 渲染大廳列表
+                renderLobby(games);
             }, (error) => {
                 console.error("監聽大廳失敗:", error);
                 publicLobbyList.innerHTML = '<p style="color: red;">無法載入大廳</p>';
@@ -144,46 +127,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderLobby(games) {
-        publicLobbyList.innerHTML = ''; // 清空列表
-
+        publicLobbyList.innerHTML = '';
         if (games.length === 0) {
-            publicLobbyList.innerHTML = '<p class="lobby-loading">目前沒有公開遊戲，快建立一個吧！</p>';
-            return;
+            publicLobbyList.innerHTML = '<p class="lobby-loading">目前沒有公開遊戲...</p>';
         }
-
         games.forEach(game => {
-            // 不顯示自己開的房間
-            if (game.data.players.X && game.data.players.X.uid === currentUser.uid) {
-                return;
-            }
-
+            if (game.data.players.X && game.data.players.X.uid === currentUser.uid) return;
             const item = document.createElement('div');
             item.classList.add('lobby-game-item');
-
             const name = document.createElement('span');
             name.textContent = `${game.data.players.X.name} 的遊戲`;
             item.appendChild(name);
-
             const joinBtn = document.createElement('button');
             joinBtn.textContent = '加入';
             joinBtn.addEventListener('click', () => joinGame(game.id));
             item.appendChild(joinBtn);
-
             publicLobbyList.appendChild(item);
         });
     }
 
-
-    // --- Phase 1: 遊戲邏輯 (更新) ---
-    
-    // (createRoom 保持不變)
+    // --- (遊戲邏輯 - 建立/加入... 保持不變) ---
     async function createRoom() {
-        if (!currentUser) return alert("請先登入");
-        
+        if (!currentUser) return;
         localPlayerSymbol = 'X';
         currentAILevel = aiDifficultySelect.value;
         const roomId = (Math.floor(Math.random() * 90000) + 10000).toString();
-        
         const newGameData = {
             board: Array(9).fill(' '),
             playerToMove: 'X',
@@ -192,87 +160,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 'O': null
             },
             winner: null,
-            status: 'waiting' // 公開狀態，大廳會偵測到
+            status: 'waiting'
         };
-
         try {
             await db.collection('games').doc(roomId).set(newGameData);
-            await subscribeToGame(roomId); // 加入遊戲
-        } catch (error) {
-            console.error("建立房間失敗:", error);
-            statusLabel.textContent = "錯誤：無法建立房間";
-        }
+            await subscribeToGame(roomId);
+        } catch (error) { console.error("建立房間失敗:", error); }
     }
 
-    // *** 綁定手動加入按鈕 ***
     btnJoinRoom.addEventListener('click', () => {
         const roomId = roomIdInput.value.trim();
-        if (roomId) {
-            joinGame(roomId); // 呼叫核心 joinGame 函式
-        } else {
-            alert("請輸入房間 ID");
-        }
+        if (roomId) joinGame(roomId);
+        else alert("請輸入房間 ID");
     });
 
-    // *** 核心 `joinGame` 函式 (取代舊的 `joinRoom`) ***
     async function joinGame(roomId) {
-        if (!currentUser) return alert("請先登入");
-        if (!roomId) return; // 防呆
-
+        if (!currentUser || !roomId) return;
         const roomRef = db.collection('games').doc(roomId);
-        
         try {
             const doc = await roomRef.get();
             if (!doc.exists) return alert("錯誤：找不到該房間");
-
             const gameData = doc.data();
+            let joiningAs = null;
             
-            let joiningAs = null; // 'X', 'O', or 'spectator'
-            
-            if (gameData.players.X && gameData.players.X.uid === currentUser.uid) {
-                joiningAs = 'X'; // 重新加入
-            } else if (gameData.players.O && gameData.players.O.uid === currentUser.uid) {
-                joiningAs = 'O'; // 重新加入
-            } else if (!gameData.players.O) {
-                joiningAs = 'O'; // 作為 O 加入
-            }
+            if (gameData.players.X && gameData.players.X.uid === currentUser.uid) joiningAs = 'X';
+            else if (gameData.players.O && gameData.players.O.uid === currentUser.uid) joiningAs = 'O';
+            else if (!gameData.players.O) joiningAs = 'O';
 
             if (joiningAs === 'O' && !gameData.players.O) {
-                // 這是玩家 O 第一次加入
                 localPlayerSymbol = 'O';
                 currentAILevel = aiDifficultySelect.value;
                 await roomRef.update({
-                    'players.O': {
-                        uid: currentUser.uid,
-                        name: currentUser.displayName,
-                        aiLevel: currentAILevel
-                    },
-                    'status': 'full' // 遊戲開始，從大廳移除
+                    'players.O': { uid: currentUser.uid, name: currentUser.displayName, aiLevel: currentAILevel },
+                    'status': 'full'
                 });
             } else if (joiningAs) {
-                // 重新加入 (X 或 O)
                 localPlayerSymbol = joiningAs;
                 currentAILevel = gameData.players[joiningAs].aiLevel;
             } else {
-                return alert("錯誤：此房間已滿 (或您不是玩家)");
+                return alert("錯誤：此房間已滿");
             }
-            
-            await subscribeToGame(roomId); // 加入/監聽遊戲
-        } catch (error) {
-            console.error("加入房間失敗:", error);
-            statusLabel.textContent = "錯誤：無法加入房間";
-        }
+            await subscribeToGame(roomId);
+        } catch (error) { console.error("加入房間失敗:", error); }
     }
 
     async function subscribeToGame(roomId) {
         currentRoomId = roomId;
-        
-        // *** 停止監聽大廳 ***
         if (unsubscribeLobbyListener) {
             unsubscribeLobbyListener();
             unsubscribeLobbyListener = null;
         }
-        
         lobbyFrame.style.display = 'none';
         gameInfoFrame.style.display = 'block';
         restartButton.style.display = 'block';
@@ -280,27 +217,28 @@ document.addEventListener('DOMContentLoaded', () => {
         playerSymbolDisplay.textContent = localPlayerSymbol;
 
         if (unsubscribeGameListener) unsubscribeGameListener();
-
         unsubscribeGameListener = db.collection('games').doc(roomId)
             .onSnapshot((doc) => {
                 if (!doc.exists) {
-                    alert("房主已離開 (或房間被刪除)");
-                    leaveRoom(); // leaveRoom 會自動重啟大廳監聽
+                    alert("房主已離開");
+                    leaveRoom();
                     return;
                 }
-                handleGameUpdate(doc.data());
+                // *** 更新：儲存 oldBoard 以用於動畫 ***
+                const oldBoard = [...state.board];
+                handleGameUpdate(doc.data(), oldBoard);
             }, (error) => {
                 console.error("監聽失敗:", error);
                 leaveRoom();
             });
     }
 
-    // (handleGameUpdate 保持不變)
-    function handleGameUpdate(gameData) {
+    // --- (Phase 3: 更新 handleGameUpdate) ---
+    function handleGameUpdate(gameData, oldBoard) { // 接收 oldBoard
         if (gameOver) return;
 
         state = new TicTacToeState(gameData.board, gameData.playerToMove);
-        updateBoard(gameData.board);
+        updateBoard(gameData.board, oldBoard); // 傳遞 oldBoard
 
         const playerXName = gameData.players.X ? gameData.players.X.name : "X";
         const playerOName = gameData.players.O ? gameData.players.O.name : " (等待中...)";
@@ -310,8 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
             gameOver = true;
             statusLabel.textContent = "遊戲結束！";
             boardButtons.forEach(btn => btn.disabled = true);
+            
+            // *** 新增：觸發勝利動畫 ***
+            highlightWinLine(gameData.board, gameData.winner);
+            
             let message = (gameData.winner === 'draw') ? "🤝 平局！ 🤝" : `🎉 玩家 ${gameData.winner} 獲勝！ 🎉`;
-            setTimeout(() => alert(message), 100);
+            setTimeout(() => alert(message), 100); // 延遲 100ms 顯示 alert
             return;
         }
 
@@ -330,35 +272,23 @@ document.addEventListener('DOMContentLoaded', () => {
             boardButtons.forEach(btn => btn.disabled = true);
         }
     }
-
-    // (onCellClick, triggerAITurn, onCellClick_AI, submitMove, updateBoard 保持不變)
-    // ( ... 請複製貼上您前一版 game.js 的這些函式 ... )
+    
+    // --- (核心邏輯 - 保持不變) ---
     async function onCellClick(index) {
-        if (gameOver || state.playerToMove !== localPlayerSymbol || state.board[index] !== ' ' || currentAILevel !== "none") {
-            return;
-        }
+        if (gameOver || state.playerToMove !== localPlayerSymbol || state.board[index] !== ' ' || currentAILevel !== "none") return;
         await submitMove(index);
     }
-    
     function triggerAITurn(currentState, iterations) {
         if (gameOver || mctsWorker === null) return;
         mctsWorker.postMessage({
-            stateData: {
-                board: currentState.board,
-                playerToMove: currentState.playerToMove
-            },
+            stateData: { board: currentState.board, playerToMove: currentState.playerToMove },
             iterations: iterations
         });
     }
-    
     async function onCellClick_AI(index) {
-        if (gameOver || state.playerToMove !== localPlayerSymbol || state.board[index] !== ' ') {
-            console.warn("AI 試圖下一個無效的棋步");
-            return;
-        }
+        if (gameOver || state.playerToMove !== localPlayerSymbol || state.board[index] !== ' ') return;
         await submitMove(index);
     }
-
     async function submitMove(index) {
         if (gameOver) return;
         boardButtons.forEach(btn => btn.disabled = true);
@@ -375,17 +305,36 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error("提交移動失敗:", error);
-            handleGameUpdate(state);
+            handleGameUpdate(state, state.board); // 出錯時，用舊 board 更新
         }
     }
 
-    function updateBoard(board) {
+    // --- (Phase 3: 更新 updateBoard) ---
+    function updateBoard(board, oldBoard = null) {
         const isMyTurn = (state.playerToMove === localPlayerSymbol);
+        
         for (let i = 0; i < 9; i++) {
-            boardButtons[i].textContent = board[i];
+            const piece = board[i];
+            const oldPiece = oldBoard ? oldBoard[i] : ' ';
+
+            // 移除舊的動畫 class
+            boardButtons[i].classList.remove('animate-place');
+            
+            // 設置棋子 (X 或 O)
+            boardButtons[i].textContent = piece;
+            boardButtons[i].classList.remove('player-x', 'player-o');
+            if (piece === 'X') boardButtons[i].classList.add('player-x');
+            if (piece === 'O') boardButtons[i].classList.add('player-o');
+            
+            // *** 新增：如果這是新棋子，加入動畫 class ***
+            if (piece !== ' ' && oldPiece === ' ') {
+                boardButtons[i].classList.add('animate-place');
+            }
+            
+            // 啟用/禁用邏輯
             if (gameOver || state.winner) {
                 boardButtons[i].disabled = true;
-            } else if (isMyTurn && currentAILevel === "none" && board[i] === ' ') {
+            } else if (isMyTurn && currentAILevel === "none" && piece === ' ') {
                 boardButtons[i].disabled = false;
             } else {
                 boardButtons[i].disabled = true;
@@ -393,19 +342,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- (Phase 3: 新增 highlightWinLine) ---
+    function highlightWinLine(board, winner) {
+        let winLine = null;
+        for (const line of WIN_CONDITIONS) {
+            const [a, b, c] = line;
+            if (board[a] === winner && board[b] === winner && board[c] === winner) {
+                winLine = line;
+                break;
+            }
+        }
+        if (winLine) {
+            // 將 'win-cell' class 加到勝利的棋格上
+            winLine.forEach(index => {
+                boardButtons[index].classList.add('win-cell');
+            });
+        }
+    }
 
-    // (leaveRoom 更新)
+    // --- (Phase 3: 更新 leaveRoom) ---
     function leaveRoom() {
         if (unsubscribeGameListener) {
             unsubscribeGameListener();
             unsubscribeGameListener = null;
         }
-        
-        // 房主 (X) 離開時刪除房間
         if (localPlayerSymbol === 'X' && currentRoomId) {
              db.collection('games').doc(currentRoomId).delete().catch(() => {});
         }
-
         state = new TicTacToeState();
         gameOver = false;
         localPlayerSymbol = null;
@@ -414,16 +377,17 @@ document.addEventListener('DOMContentLoaded', () => {
         gameInfoFrame.style.display = 'none';
         restartButton.style.display = 'none';
         
-        // *** 重新顯示大廳並重新監聽 (如果已登入) ***
         if (currentUser) {
             lobbyFrame.style.display = 'flex';
             statusLabel.textContent = "已登入。請建立或加入房間";
-            listenForLobbyChanges(); // *** 重新啟動大廳監聽 ***
+            listenForLobbyChanges();
         }
         
+        // *** 更新：清除所有棋盤 class ***
         boardButtons.forEach(btn => {
             btn.textContent = ' ';
             btn.disabled = true;
+            btn.classList.remove('player-x', 'player-o', 'win-cell', 'animate-place');
         });
         
         roomIdInput.value = "";
@@ -432,6 +396,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 程式進入點 ---
     initializeBoardButtons();
     initializeWorker();
-    initializeAuth(); // 保持不變，這會觸發所有流程
-
-}); // DOMContentLoaded 結束
+    initializeAuth(); 
+});

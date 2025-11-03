@@ -1,52 +1,46 @@
-/* ... (您原有的 style.css 程式碼) ... */
+/* style.css (Phase 3: 最終美化版) */
 
-/* 新增：大廳介面樣式 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #f4f7f6;
+    color: #333;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+h1 {
+    color: #2c3e50;
+    font-weight: 300;
+}
+
+#status-label {
+    font-size: 1.2em;
+    font-weight: 500;
+    color: #3498db;
+    height: 1.5em;
+    margin: 10px 0;
+}
+
 .setup-frame {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 15px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     margin-bottom: 20px;
-    width: 300px;
-}
-
-#lobby-frame {
-    /* 預設顯示，用 flex */
-    display: flex;
-}
-
-.join-room-group {
-    display: flex;
-    gap: 5px;
-}
-.join-room-group input {
-    flex-grow: 1; /* 讓輸入框填滿空間 */
-    font-size: 1em;
-    padding: 8px;
-}
-
-select, input[type="text"] {
-    font-size: 1em;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-hr {
-    border: none;
-    border-top: 1px solid #eee;
     width: 100%;
+    max-width: 500px; /* 限制大廳寬度 */
+    box-sizing: border-box; /* 確保 padding 不會超寬 */
 }
 
-#game-info-frame p {
-    margin: 2px 0;
-    font-size: 1.1em;
-}
 /* --- Phase 2: Lobby 樣式 --- */
-
 .lobby-header {
     display: flex;
     justify-content: space-between;
@@ -55,27 +49,23 @@ hr {
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
 }
-.lobby-header p {
-    margin: 0;
-    font-size: 1.2em;
-}
+.lobby-header p { margin: 0; font-size: 1.2em; }
+.lobby-header button { font-size: 0.8em; padding: 5px 10px; }
 
-#btn-sign-out {
-    background-color: #e74c3c; /* 紅色 */
-    font-size: 0.8em;
-    padding: 5px 10px;
-}
-#btn-sign-out:hover {
-    background-color: #c0392b;
-}
+#btn-sign-out { background-color: #e74c3c; }
+#btn-sign-out:hover { background-color: #c0392b; }
 
 .lobby-columns {
     display: flex;
+    flex-direction: column; /* 在手機上垂直排列 */
     width: 100%;
     gap: 20px;
 }
+@media (min-width: 500px) { /* 在桌面上水平排列 */
+    .lobby-columns { flex-direction: row; }
+}
 .lobby-column {
-    flex: 1; /* 兩欄等寬 */
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -85,7 +75,6 @@ hr {
     border-bottom: 2px solid #3498db;
     padding-bottom: 5px;
 }
-
 #public-lobby-list {
     min-height: 150px;
     max-height: 300px;
@@ -102,13 +91,134 @@ hr {
     padding: 8px;
     border-bottom: 1px solid #eee;
 }
-.lobby-game-item:last-child {
-    border-bottom: none;
+.lobby-game-item:last-child { border-bottom: none; }
+.lobby-game-item button { font-size: 0.9em; background-color: #2ecc71; }
+.lobby-game-item button:hover { background-color: #27ae60; }
+
+.join-room-group { display: flex; gap: 5px; }
+.join-room-group input { flex-grow: 1; font-size: 1em; padding: 8px; }
+
+/* --- 遊戲介面 --- */
+#game-info-frame { display: none; }
+#game-info-frame p { margin: 2px 0; font-size: 1.1em; text-align: center; }
+
+#board-frame {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 300px;
+    height: 300px;
+    background-color: #34495e; /* 深藍色棋盤底 */
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    overflow: hidden; /* 為了圓角 */
 }
-.lobby-game-item button {
-    font-size: 0.9em;
-    background-color: #2ecc71; /* 綠色 */
+
+/* --- Phase 3: 美化棋格 --- */
+.cell {
+    width: 100px;
+    height: 100px;
+    font-size: 4.5em; /* 放大 X 和 O */
+    font-weight: bold;
+    font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+    
+    /* 移除所有按鈕預設樣式 */
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: #ecf0f1; /* 淺灰色底 */
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    /* 用 box-shadow 畫出格線 (比 border 更細緻) */
+    box-shadow: inset 0 0 0 3px #bdc3c7; 
 }
-.lobby-game-item button:hover {
-    background-color: #27ae60;
+
+.cell:hover:not(:disabled) {
+    background-color: #e0e6e8;
+}
+.cell:disabled {
+    cursor: not-allowed;
+}
+
+/* 棋子顏色 */
+.cell.player-x {
+    color: #3498db; /* 藍色 X */
+}
+.cell.player-o {
+    color: #e74c3c; /* 紅色 O */
+}
+
+/* --- Phase 3: 動畫 --- */
+
+/* 1. 下棋 (Pop-in) 動畫 */
+@keyframes placePiece {
+    from {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+.animate-place {
+    /* 帶點彈跳感 */
+    animation: placePiece 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 2. 勝利 (Pulse) 動畫 */
+@keyframes pulse {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+}
+.cell.win-cell {
+    background-color: #2ecc71; /* 勝利的綠色 */
+    color: white;
+    animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+/* --- 通用按鈕樣式 --- */
+button {
+    font-size: 1em;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+button:hover {
+    background-color: #2980b9;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+#restart-button {
+    margin-top: 20px;
+    background-color: #f39c12; /* 橘色 */
+}
+#restart-button:hover {
+    background-color: #e67e22;
+}
+
+/* --- 通用輸入框 --- */
+select, input[type="text"] {
+    font-size: 1em;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box; /* 確保 padding 不會超寬 */
 }
