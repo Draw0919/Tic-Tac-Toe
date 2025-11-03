@@ -223,3 +223,31 @@ select, input[type="text"] {
     width: 100%;
     box-sizing: border-box; /* 確保 padding 不會超寬 */
 }
+
+/* --- Phase 3.3: 遊戲結束按鈕樣式 --- */
+
+#game-over-buttons {
+    display: flex; /* 預設是 flex，由 JS 控制顯示/隱藏 */
+    justify-content: center;
+    width: 100%;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+#btn-play-again {
+    background-color: #2ecc71; /* 綠色 */
+}
+#btn-play-again:hover {
+    background-color: #27ae60;
+}
+#btn-play-again:disabled {
+    background-color: #95a5a6;
+}
+
+/* 我們在 Phase 2 加的 restart-button 樣式會自動套用 */
+#restart-button {
+    background-color: #f39c12; /* 橘色 */
+}
+#restart-button:hover {
+    background-color: #e67e22;
+}

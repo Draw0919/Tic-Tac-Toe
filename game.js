@@ -1,4 +1,4 @@
-// game.js (Phase 3: Animation 版本)
+// game.js (Phase 3.3: 最終版 - 加入 "Play Again")
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -17,14 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
         "簡單": 50, "中等": 500, "困難": 2000, "超困難": 10000
     };
     
-    // *** 新增：勝利條件 (用於動畫) ***
     const WIN_CONDITIONS = [
         [0, 1, 2], [3, 4, 5], [6, 7, 8], // 橫
         [0, 3, 6], [1, 4, 7], [2, 5, 8], // 豎
         [0, 4, 8], [2, 4, 6]             // 斜
     ];
 
-    // --- (DOM 元素獲取... 保持不變) ---
+    // --- DOM 元素獲取 ---
     const statusLabel = document.getElementById('status-label');
     const authFrame = document.getElementById('auth-frame');
     const btnGoogleLogin = document.getElementById('btn-google-login');
@@ -37,7 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerSymbolDisplay = document.getElementById('player-symbol-display');
     const gameVsDisplay = document.getElementById('game-vs-display'); 
     const boardFrame = document.getElementById('board-frame');
-    const restartButton = document.getElementById('restart-button');
+    
+    // *** 獲取新/移動過的按鈕 ***
+    const gameOverButtons = document.getElementById('game-over-buttons');
+    const btnPlayAgain = document.getElementById('btn-play-again');
+    const restartButton = document.getElementById('restart-button'); // "離開房間"
+    
     const aiDifficultySelect = document.getElementById('ai-difficulty-select');
     const btnCreateRoom = document.getElementById('btn-create-room');
     const btnJoinRoom = document.getElementById('btn-join-room');
@@ -48,9 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeWorker() {
         if (window.Worker) {
             mctsWorker = new Worker('mcts_worker.js');
-            mctsWorker.onmessage = function(e) {
-                onCellClick_AI(e.data);
-            };
+            mctsWorker.onmessage = function(e) { onCellClick_AI(e.data); };
             mctsWorker.onerror = function(e) {
                 console.error("Worker 發生錯誤:", e.message);
                 statusLabel.textContent = "AI 運算錯誤";
@@ -70,10 +72,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- (Auth 邏輯... 保持不變) ---
+    // --- Auth 邏輯 (更新) ---
     function initializeAuth() {
         btnGoogleLogin.addEventListener('click', signInWithGoogle);
         btnSignOut.addEventListener('click', signOut);
+
+        // *** 修復 1：綁定「離開房間」按鈕 ***
+        restartButton.addEventListener('click', leaveRoom);
+        
+        // *** 新增：綁定「再來一局」按鈕 ***
+        btnPlayAgain.addEventListener('click', requestRematch);
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -109,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await auth.signOut();
     }
 
-    // --- (Lobby 邏輯... 保持不變) ---
+    // --- Lobby 邏輯 (保持不變) ---
     function listenForLobbyChanges() {
         if (unsubscribeLobbyListener) unsubscribeLobbyListener();
         unsubscribeLobbyListener = db.collection('games')
@@ -125,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 publicLobbyList.innerHTML = '<p style="color: red;">無法載入大廳</p>';
             });
     }
-
     function renderLobby(games) {
         publicLobbyList.innerHTML = '';
         if (games.length === 0) {
@@ -146,7 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- (遊戲邏輯 - 建立/加入... 保持不變) ---
+    // --- 遊戲邏輯 - 建立/加入 (更新) ---
+    
+    // *** 修復 1：綁定「建立房間」按鈕 ***
+    btnCreateRoom.addEventListener('click', createRoom);
+    
     async function createRoom() {
         if (!currentUser) return;
         localPlayerSymbol = 'X';
@@ -160,7 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'O': null
             },
             winner: null,
-            status: 'waiting'
+            status: 'waiting',
+            rematch: { X: false, O: false } // *** 新增 rematch 欄位 ***
         };
         try {
             await db.collection('games').doc(roomId).set(newGameData);
@@ -168,10 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error("建立房間失敗:", error); }
     }
 
-    // *** 新增：綁定「建立房間」按鈕 ***
-    btnCreateRoom.addEventListener('click', createRoom);
-
-    btnJoinRoom.addEventListener('click', () => { // <--- 這是「手動加入」按鈕
+    btnJoinRoom.addEventListener('click', () => {
         const roomId = roomIdInput.value.trim();
         if (roomId) joinGame(roomId);
         else alert("請輸入房間 ID");
@@ -199,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else if (joiningAs) {
                 localPlayerSymbol = joiningAs;
-                currentAILevel = gameData.players[joiningAs].aiLevel;
+                currentAILevel = (gameData.players[joiningAs] && gameData.players[joiningAs].aiLevel) ? gameData.players[joiningAs].aiLevel : "none";
             } else {
                 return alert("錯誤：此房間已滿");
             }
@@ -215,7 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         lobbyFrame.style.display = 'none';
         gameInfoFrame.style.display = 'block';
-        restartButton.style.display = 'block';
+        gameOverButtons.style.display = 'none'; // 隱藏遊戲結束按鈕
+        
         roomIdDisplay.textContent = currentRoomId;
         playerSymbolDisplay.textContent = localPlayerSymbol;
 
@@ -227,8 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     leaveRoom();
                     return;
                 }
-                // *** 更新：儲存 oldBoard 以用於動畫 ***
-                const oldBoard = [...state.board];
+                const oldBoard = [...state.board]; // 儲存舊棋盤
                 handleGameUpdate(doc.data(), oldBoard);
             }, (error) => {
                 console.error("監聽失敗:", error);
@@ -236,30 +245,73 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // --- (Phase 3: 更新 handleGameUpdate) ---
-    function handleGameUpdate(gameData, oldBoard) { // 接收 oldBoard
-        if (gameOver) return;
-
+    // --- (Phase 3.3: 更新 handleGameUpdate) ---
+    function handleGameUpdate(gameData, oldBoard) {
+        if (gameOver && !gameData.winner) {
+            // 遊戲剛重置
+            gameOver = false;
+            // 清除所有動畫
+            boardButtons.forEach(btn => {
+                btn.classList.remove('win-cell', 'animate-place');
+            });
+        }
+        
         state = new TicTacToeState(gameData.board, gameData.playerToMove);
-        updateBoard(gameData.board, oldBoard); // 傳遞 oldBoard
+        updateBoard(gameData.board, oldBoard); 
 
         const playerXName = gameData.players.X ? gameData.players.X.name : "X";
         const playerOName = gameData.players.O ? gameData.players.O.name : " (等待中...)";
         gameVsDisplay.textContent = `${playerXName} (X) vs ${playerOName} (O)`;
 
         if (gameData.winner) {
-            gameOver = true;
-            statusLabel.textContent = "遊戲結束！";
-            boardButtons.forEach(btn => btn.disabled = true);
+            if (!gameOver) { // 只在剛結束時觸發一次
+                gameOver = true;
+                statusLabel.textContent = "遊戲結束！";
+                boardButtons.forEach(btn => btn.disabled = true);
+                highlightWinLine(gameData.board, gameData.winner);
+                let message = (gameData.winner === 'draw') ? "🤝 平局！ 🤝" : `🎉 玩家 ${gameData.winner} 獲勝！ 🎉`;
+                setTimeout(() => alert(message), 100);
+            }
             
-            // *** 新增：觸發勝利動畫 ***
-            highlightWinLine(gameData.board, gameData.winner);
+            // *** 新增：處理 "再來一局" 邏輯 ***
+            gameOverButtons.style.display = 'flex'; // 顯示按鈕
+            const rematchData = gameData.rematch || { X: false, O: false };
             
-            let message = (gameData.winner === 'draw') ? "🤝 平局！ 🤝" : `🎉 玩家 ${gameData.winner} 獲勝！ 🎉`;
-            setTimeout(() => alert(message), 100); // 延遲 100ms 顯示 alert
-            return;
+            // 檢查對方
+            const opponentSymbol = (localPlayerSymbol === 'X') ? 'O' : 'X';
+            const opponentWantsRematch = rematchData[opponentSymbol];
+            
+            if (rematchData[localPlayerSymbol]) {
+                // 我已經點了
+                btnPlayAgain.disabled = true;
+                btnPlayAgain.textContent = opponentWantsRematch ? "正在重置..." : "等待對手...";
+            } else {
+                // 我還沒點
+                btnPlayAgain.disabled = false;
+                btnPlayAgain.textContent = opponentWantsRematch ? "對手想再來一局！" : "再來一局";
+            }
+            
+            // 檢查 AI 是否自動點擊
+            if (currentAILevel !== "none" && !rematchData[localPlayerSymbol]) {
+                requestRematch();
+            }
+            
+            // 檢查是否雙方都同意
+            if (rematchData.X && rematchData.O) {
+                // 只有 P1 (X) 負責重置遊戲，避免雙方同時重置
+                if (localPlayerSymbol === 'X') {
+                    resetGameForRematch(gameData);
+                }
+            }
+            
+            return; // 遊戲結束，停止後續檢查
         }
 
+        // --- 遊戲進行中 ---
+        
+        // 確保遊戲結束按鈕是隱藏的
+        gameOverButtons.style.display = 'none';
+        
         const isMyTurn = (gameData.playerToMove === localPlayerSymbol);
         
         if (isMyTurn) {
@@ -304,37 +356,63 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.collection('games').doc(currentRoomId).update({
                 board: newBoard,
                 playerToMove: newPlayerToMove,
-                winner: winner
+                winner: winner,
+                rematch: { X: false, O: false } // *** 重置 rematch 狀態 ***
             });
         } catch (error) {
             console.error("提交移動失敗:", error);
-            handleGameUpdate(state, state.board); // 出錯時，用舊 board 更新
+            handleGameUpdate(state, state.board);
         }
     }
 
-    // --- (Phase 3: 更新 updateBoard) ---
+    // --- (Phase 3.3: 新增 "再來一局" 函式) ---
+    
+    async function requestRematch() {
+        if (!currentRoomId || !localPlayerSymbol) return;
+        
+        btnPlayAgain.disabled = true;
+        btnPlayAgain.textContent = "等待對手...";
+        
+        try {
+            // 使用 . 符號來更新 nested object
+            await db.collection('games').doc(currentRoomId).update({
+                [`rematch.${localPlayerSymbol}`]: true
+            });
+        } catch (error) {
+            console.error("請求再來一局失敗:", error);
+            btnPlayAgain.disabled = false;
+        }
+    }
+    
+    async function resetGameForRematch(gameData) {
+        // 重置遊戲狀態，但保留玩家和 AI 設定
+        try {
+            await db.collection('games').doc(currentRoomId).update({
+                board: Array(9).fill(' '),
+                playerToMove: 'X', // X 永遠先手
+                winner: null,
+                rematch: { X: false, O: false }
+            });
+            // onSnapshot 會自動偵測到變更並重置 'gameOver' 狀態
+        } catch (error) {
+            console.error("重置遊戲失敗:", error);
+        }
+    }
+
+    // --- (updateBoard, highlightWinLine 保持不變) ---
     function updateBoard(board, oldBoard = null) {
         const isMyTurn = (state.playerToMove === localPlayerSymbol);
-        
         for (let i = 0; i < 9; i++) {
             const piece = board[i];
             const oldPiece = oldBoard ? oldBoard[i] : ' ';
-
-            // 移除舊的動畫 class
             boardButtons[i].classList.remove('animate-place');
-            
-            // 設置棋子 (X 或 O)
             boardButtons[i].textContent = piece;
             boardButtons[i].classList.remove('player-x', 'player-o');
             if (piece === 'X') boardButtons[i].classList.add('player-x');
             if (piece === 'O') boardButtons[i].classList.add('player-o');
-            
-            // *** 新增：如果這是新棋子，加入動畫 class ***
             if (piece !== ' ' && oldPiece === ' ') {
                 boardButtons[i].classList.add('animate-place');
             }
-            
-            // 啟用/禁用邏輯
             if (gameOver || state.winner) {
                 boardButtons[i].disabled = true;
             } else if (isMyTurn && currentAILevel === "none" && piece === ' ') {
@@ -344,8 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
-    // --- (Phase 3: 新增 highlightWinLine) ---
     function highlightWinLine(board, winner) {
         let winLine = null;
         for (const line of WIN_CONDITIONS) {
@@ -356,14 +432,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (winLine) {
-            // 將 'win-cell' class 加到勝利的棋格上
             winLine.forEach(index => {
                 boardButtons[index].classList.add('win-cell');
             });
         }
     }
 
-    // --- (Phase 3: 更新 leaveRoom) ---
+    // --- (Phase 3.3: 更新 leaveRoom) ---
     function leaveRoom() {
         if (unsubscribeGameListener) {
             unsubscribeGameListener();
@@ -378,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRoomId = null;
         
         gameInfoFrame.style.display = 'none';
-        restartButton.style.display = 'none';
+        gameOverButtons.style.display = 'none'; // *** 隱藏按鈕 ***
         
         if (currentUser) {
             lobbyFrame.style.display = 'flex';
@@ -386,7 +461,6 @@ document.addEventListener('DOMContentLoaded', () => {
             listenForLobbyChanges();
         }
         
-        // *** 更新：清除所有棋盤 class ***
         boardButtons.forEach(btn => {
             btn.textContent = ' ';
             btn.disabled = true;
@@ -396,8 +470,9 @@ document.addEventListener('DOMContentLoaded', () => {
         roomIdInput.value = "";
     }
     
-    // --- 程式進入點 ---
+    // --- 程式進入點 (更新) ---
     initializeBoardButtons();
     initializeWorker();
+    // *** 這是新的進入點 ***
     initializeAuth(); 
 });
