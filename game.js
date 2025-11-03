@@ -465,11 +465,10 @@ document.addEventListener('DOMContentLoaded', () => {
         gameOverButtons.style.display = 'none';
         restartButton.style.display = 'none';
         
-        boardButtons.forEach(btn => {
-            btn.textContent = ' ';
-            btn.disabled = true;
-            btn.classList.remove('player-x', 'player-o', 'win-cell', 'animate-place');
-        });
+        // *** 修復 BUG 3：重置棋盤時清除舊按鈕 ***
+        boardButtons.length = 0; // 清空陣列
+        boardFrame.innerHTML = ''; // 清空 DOM
+        
         roomIdInput.value = "";
         
         if (currentUser) {
