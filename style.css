@@ -45,3 +45,70 @@ hr {
     margin: 2px 0;
     font-size: 1.1em;
 }
+/* --- Phase 2: Lobby 樣式 --- */
+
+.lobby-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.lobby-header p {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+#btn-sign-out {
+    background-color: #e74c3c; /* 紅色 */
+    font-size: 0.8em;
+    padding: 5px 10px;
+}
+#btn-sign-out:hover {
+    background-color: #c0392b;
+}
+
+.lobby-columns {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+}
+.lobby-column {
+    flex: 1; /* 兩欄等寬 */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.lobby-column h4 {
+    margin-bottom: 5px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+#public-lobby-list {
+    min-height: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background: #f9f9f9;
+}
+.lobby-game-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+.lobby-game-item:last-child {
+    border-bottom: none;
+}
+.lobby-game-item button {
+    font-size: 0.9em;
+    background-color: #2ecc71; /* 綠色 */
+}
+.lobby-game-item button:hover {
+    background-color: #27ae60;
+}

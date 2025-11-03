@@ -17,22 +17,37 @@
     </div>
 
     <div id="lobby-frame" class="setup-frame" style="display: none;">
-        <p>您好, <strong id="user-display-name">---</strong>!</p>
-        <hr>
-        <label>讓 MCTS (AI) 幫您玩：</label>
-        <select id="ai-difficulty-select">
-            <option value="none">我不想用 AI (真人對戰)</option>
-            <option value="簡單">簡單 (50 iter)</option>
-            <option value="中等">中等 (500 iter)</option>
-            <option value="困難">困難 (2000 iter)</option>
-            <option value="超困難">超困難 (10000 iter)</option>
-        </select>
-        <hr>
-        <button id="btn-create-room">建立新房間</button>
-        <hr>
-        <div class="join-room-group">
-            <input type="text" id="room-id-input" placeholder="輸入房間 ID">
-            <button id="btn-join-room">加入房間</button>
+        
+        <div class="lobby-header">
+            <p>您好, <strong id="user-display-name">---</strong>!</p>
+            <button id="btn-sign-out">登出</button>
+        </div>
+
+        <div class="lobby-columns">
+            <div class="lobby-column">
+                <h4>建立新遊戲</h4>
+                <label>讓 MCTS (AI) 幫您玩：</label>
+                <select id="ai-difficulty-select">
+                    <option value="none">我不想用 AI (真人對戰)</option>
+                    <option value="簡單">簡單 (50 iter)</option>
+                    <option value="中等">中等 (500 iter)</option>
+                    <option value="困難">困難 (2000 iter)</option>
+                    <option value="超困難">超困難 (10000 iter)</option>
+                </select>
+                <button id="btn-create-room">建立新房間</button>
+            </div>
+
+            <div class="lobby-column">
+                <h4>加入公開遊戲</h4>
+                <div id="public-lobby-list">
+                    <p class="lobby-loading">正在載入大廳...</p>
+                </div>
+                <hr>
+                <div class="join-room-group">
+                    <input type="text" id="room-id-input" placeholder="或手動輸入 ID">
+                    <button id="btn-join-room">手動加入</button>
+                </div>
+            </div>
         </div>
     </div>
     
