@@ -337,6 +337,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 statusLabel.textContent = "輪到你了！";
             }
+            boardButtons.forEach((btn, index) => {
+                    if (state.board[index] === ' ') {
+                        btn.disabled = false;
+                    } else {
+                        btn.disabled = true;
+                    }
+                });
         } else {
             const opponentSymbol = (localPlayerSymbol === 'X') ? 'O' : 'X';
             const opponentPlayer = gameData.players[opponentSymbol];
