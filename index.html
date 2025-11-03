@@ -79,12 +79,15 @@
         };
 
         // *** 正確的 'compat' 語法 ***
+        // 我們使用全域的 'firebase' 物件
         firebase.initializeApp(firebaseConfig);
         
         // *** 建立 'db' 和 'auth' 變數，讓 game.js 可以使用 ***
         const db = firebase.firestore();
-        const auth = firebase.auth(); 
+        const auth = firebase.auth();
     </script>
+
     <script src="mcts.js"></script><script src="game.js"></script> 
+
     </body> 
 </html>
