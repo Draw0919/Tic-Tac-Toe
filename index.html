@@ -26,15 +26,18 @@
         <div class="lobby-columns">
             <div class="lobby-column">
                 <h4>建立新遊戲</h4>
-                <label>讓 MCTS (AI) 幫您玩：</label>
+                
+                <button id="btn-create-pvp">建立公開遊戲 (PVP)</button>
+                <hr>
+
+                <label>AI 對手難度：</label>
                 <select id="ai-difficulty-select">
-                    <option value="none">我不想用 AI (真人對戰)</option>
                     <option value="簡單">簡單 (50 iter)</option>
                     <option value="中等">中等 (500 iter)</option>
                     <option value="困難">困難 (2000 iter)</option>
                     <option value="超困難">超困難 (10000 iter)</option>
                 </select>
-                <button id="btn-create-room">建立新房間</button>
+                <button id="btn-create-pve">建立 AI 對戰 (PVE)</button>
             </div>
 
             <div class="lobby-column">
@@ -49,6 +52,20 @@
                 </div>
             </div>
         </div>
+    </div>
+    
+    <div id="game-info-frame" class="setup-frame" style="display: none;">
+        <div class="game-info-header"> <div>
+                <p>房間 ID: <strong id="room-id-display">---</strong></p>
+                <p>您的身分: <strong id="player-symbol-display">---</strong></p>
+            </div>
+            <button id="restart-button">離開房間</button>
+        </div>
+        <p><strong id="game-vs-display">X vs O</strong></p> 
+        
+        <div id="game-over-buttons" style="display: none; margin-top: 10px; gap: 10px;">
+            <button id="btn-play-again">再來一局</button>
+            </div>
     </div>
     
     <div id="game-info-frame" class="setup-frame" style="display: none;">

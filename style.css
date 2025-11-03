@@ -251,3 +251,22 @@ select, input[type="text"] {
 #restart-button:hover {
     background-color: #e67e22;
 }
+
+/* --- Phase 3.4: 遊戲資訊標頭樣式 --- */
+
+.game-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.game-info-header div {
+    /* 讓 "房間ID" 和 "您的身分" 靠左 */
+    text-align: left;
+}
+
+#game-info-frame #restart-button {
+    /* 覆寫 .setup-frame 中按鈕的 margin-top */
+    margin-top: 0; 
+}
