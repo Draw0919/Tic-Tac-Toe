@@ -77,10 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGoogleLogin.addEventListener('click', signInWithGoogle);
         btnSignOut.addEventListener('click', signOut);
 
-        // *** 修復 1：綁定「離開房間」按鈕 ***
         restartButton.addEventListener('click', leaveRoom);
         
-        // *** 新增：綁定「再來一局」按鈕 ***
         btnPlayAgain.addEventListener('click', requestRematch);
 
         auth.onAuthStateChanged(user => {
