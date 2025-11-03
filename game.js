@@ -266,6 +266,31 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    function updateBoard(newBoard, oldBoard) {
+        for (let i = 0; i < 9; i++) {
+            const button = boardButtons[i];
+            const symbol = newBoard[i];
+
+            if (symbol === ' ') {
+                button.textContent = '';
+                button.classList.remove('player-x', 'player-o', 'animate-place');
+            } else {
+                button.textContent = symbol;
+                button.classList.add(symbol === 'X' ? 'player-x' : 'player-o');
+                
+                // 檢查是否是 "剛剛" 下的棋
+                if (oldBoard && oldBoard[i] === ' ' && symbol !== ' ') {
+                    button.classList.add('animate-place');
+                }
+            }
+
+            // 移除動畫，以便下次觸發
+            button.addEventListener('animationend', () => {
+                button.classList.remove('animate-place');
+            }, { once: true });
+        }
+    }
+
     // --- (handleGameUpdate 保持 Phase 3.4 的邏輯) ---
     function handleGameUpdate(gameData, oldBoard) {
         if (gameOver && !gameData.winner) {
