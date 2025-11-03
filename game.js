@@ -436,36 +436,69 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- (Phase 3.3: 更新 leaveRoom) ---
-    function leaveRoom() {
+    // --- (Phase 3.3: 修正 leaveRoom 函式) ---
+    async function leaveRoom() {
+        // 1. 停止監聽舊遊戲
         if (unsubscribeGameListener) {
             unsubscribeGameListener();
             unsubscribeGameListener = null;
         }
-        if (localPlayerSymbol === 'X' && currentRoomId) {
-             db.collection('games').doc(currentRoomId).delete().catch(() => {});
-        }
+
+        // 儲存我們正要離開的房間 ID 和我們的角色
+        const roomToLeave = currentRoomId;
+        const playerWhoLeft = localPlayerSymbol;
+
+        // 2. *立刻* 重置所有本地 UI 狀態
         state = new TicTacToeState();
         gameOver = false;
         localPlayerSymbol = null;
         currentRoomId = null;
         
         gameInfoFrame.style.display = 'none';
-        gameOverButtons.style.display = 'none'; // *** 隱藏按鈕 ***
+        gameOverButtons.style.display = 'none'; // 隱藏 "再來一局" 按鈕
         
-        if (currentUser) {
-            lobbyFrame.style.display = 'flex';
-            statusLabel.textContent = "已登入。請建立或加入房間";
-            listenForLobbyChanges();
-        }
-        
+        // 重置棋盤
         boardButtons.forEach(btn => {
             btn.textContent = ' ';
             btn.disabled = true;
             btn.classList.remove('player-x', 'player-o', 'win-cell', 'animate-place');
         });
-        
         roomIdInput.value = "";
+        
+        // 3. *立刻* 顯示大廳 (如果已登入)
+        if (currentUser) {
+            lobbyFrame.style.display = 'flex';
+            statusLabel.textContent = "已登入。請建立或加入房間";
+        }
+
+        // 4. (非同步) 在背景執行緩慢的資料庫操作
+        try {
+            if (playerWhoLeft === 'X' && roomToLeave) {
+                // --- 我是玩家 X (房主) ---
+                // 我必須 *刪除* 整個房間
+                await db.collection('games').doc(roomToLeave).delete();
+                
+            } else if (playerWhoLeft === 'O' && roomToLeave) {
+                // --- 我是玩家 O (加入者) ---
+                // 我必須 *重置* 房間，讓其他人可以加入
+                await db.collection('games').doc(roomToLeave).update({
+                    'players.O': null,          // 移除玩家 O
+                    'status': 'waiting',      // 狀態改回 "等待中"
+                    'rematch': { X: false, O: false }, // 重置再來一局的狀態
+                    'board': Array(9).fill(' '), // 重置棋盤 (以防萬一)
+                    'playerToMove': 'X',
+                    'winner': null
+                });
+            }
+        } catch (error) {
+            console.error("離開房間時出錯:", error);
+        }
+
+        // 5. *直到* 資料庫操作完成後，才重新監聽大廳
+        //    這樣就能確保大廳列表是 100% 正確的
+        if (currentUser) {
+            listenForLobbyChanges();
+        }
     }
     
     // --- 程式進入點 (更新) ---
