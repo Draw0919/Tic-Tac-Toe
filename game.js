@@ -168,7 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error("建立房間失敗:", error); }
     }
 
-    btnJoinRoom.addEventListener('click', () => {
+    // *** 新增：綁定「建立房間」按鈕 ***
+    btnCreateRoom.addEventListener('click', createRoom);
+
+    btnJoinRoom.addEventListener('click', () => { // <--- 這是「手動加入」按鈕
         const roomId = roomIdInput.value.trim();
         if (roomId) joinGame(roomId);
         else alert("請輸入房間 ID");
