@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCTS 井字遊戲 (Web版)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>MCTS 井字遊戲</h1>
+    <label id="status-label">歡迎！請選擇遊戲模式</label>
+
+    <div id="mode-frame" class="setup-frame">
+        <button id="btn-pvp">玩家 vs 玩家</button>
+        <button id="btn-pvc">玩家 vs 電腦</button>
+        <button id="btn-cvc">電腦 vs 電腦</button>
+    </div>
+
+    <div id="pvc-setup-frame" class="setup-frame" style="display: none;">
+        <div class="difficulty-select">
+            <label>選擇難度:</label>
+            <input type="radio" id="pvc-easy" name="pvc-difficulty" value="簡單" checked> <label for="pvc-easy">簡單</label>
+            <input type="radio" id="pvc-medium" name="pvc-difficulty" value="中等"> <label for="pvc-medium">中等</label>
+            <input type="radio" id="pvc-hard" name="pvc-difficulty" value="困難"> <label for="pvc-hard">困難</label>
+        </div>
+        <div class="choice-frame">
+            <button id="btn-pvc-x">我當 X (先手)</button>
+            <button id="btn-pvc-o">我當 O (後手)</button>
+        </div>
+    </div>
+
+    <div id="cvc-setup-frame" class="setup-frame" style="display: none;">
+        <div class="difficulty-select">
+            <label>AI (X) 難度:</label>
+            <input type="radio" id="cvc-x-easy" name="cvc-x-difficulty" value="簡單"> <label for="cvc-x-easy">簡單</label>
+            <input type="radio" id="cvc-x-medium" name="cvc-x-difficulty" value="中等"> <label for="cvc-x-medium">中等</label>
+            <input type="radio" id="cvc-x-hard" name="cvc-x-difficulty" value="困難" checked> <label for="cvc-x-hard">困難</label>
+        </div>
+        <div class="difficulty-select">
+            <label>AI (O) 難度:</label>
+            <input type="radio" id="cvc-o-easy" name="cvc-o-difficulty" value="簡單"> <label for="cvc-o-easy">簡單</label>
+            <input type="radio" id="cvc-o-medium" name="cvc-o-difficulty" value="中等" checked> <label for="cvc-o-medium">中等</label>
+            <input type="radio" id="cvc-o-hard" name="cvc-o-difficulty" value="困難"> <label for="cvc-o-hard">困難</label>
+        </div>
+        <button id="btn-cvc-start">開始 AI 對戰</button>
+    </div>
+
+    <div id="board-frame">
+        </div>
+
+    <button id="restart-button">回到主選單</button>
+
+    <script src="mcts.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
