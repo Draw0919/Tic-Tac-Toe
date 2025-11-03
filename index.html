@@ -67,13 +67,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
     <script>
-        // *** 貼上您的 firebaseConfig ***
-       
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-
         // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
             apiKey: "AIzaSyBGpa6CSfQByzuBmepn6DfCSUyTPQ0uBJg",
             authDomain: "tic-tac-toe-b2a29.firebaseapp.com",
@@ -84,10 +78,13 @@
             measurementId: "G-HE74554CJ0"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+        // *** 正確的 'compat' 語法 ***
+        firebase.initializeApp(firebaseConfig);
+        
+        // *** 建立 'db' 和 'auth' 變數，讓 game.js 可以使用 ***
+        const db = firebase.firestore();
+        const auth = firebase.auth(); 
     </script>
-    
-
+    <script src="mcts.js"></script><script src="game.js"></script> 
+    </body> 
 </html>
