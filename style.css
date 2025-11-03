@@ -1,26 +1,6 @@
-body {
-    font-family: 'Arial', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background-color: #f0f0f0;
-    color: #333;
-}
+/* ... (您原有的 style.css 程式碼) ... */
 
-h1 {
-    color: #2c3e50;
-}
-
-#status-label {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #3498db;
-    height: 1.5em; /* 確保高度固定，防止跳動 */
-    margin: 10px 0;
-}
-
+/* 新增：大廳介面樣式 */
 .setup-frame {
     display: flex;
     flex-direction: column;
@@ -30,77 +10,38 @@ h1 {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    width: 300px;
 }
 
-.difficulty-select {
+#lobby-frame {
+    /* 預設顯示，用 flex */
     display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
-.choice-frame {
+.join-room-group {
     display: flex;
-    justify-content: center;
-    gap: 10px;
+    gap: 5px;
 }
-
-#board-frame {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    width: 300px; /* 3 * 100px */
-    height: 300px; /* 3 * 100px */
-    border: 3px solid #34495e;
-    background-color: #34495e;
-    gap: 3px; /* 棋盤格線 */
-}
-
-.cell {
-    width: 98px; /* 略小於 100px 以適應邊框/間隙 */
-    height: 98px;
-    font-size: 3em;
-    font-weight: bold;
-    border: none;
-    background-color: #ecf0f1;
-    cursor: pointer;
-    color: #2c3e50;
-    transition: background-color 0.2s;
-}
-
-.cell:hover {
-    background-color: #bdc3c7;
-}
-
-.cell:disabled {
-    cursor: not-allowed;
-    background-color: #ecf0f1; /* 已下棋的格子顏色 */
-    color: #2c3e50; /* 已下棋子的顏色 */
-}
-
-button {
+.join-room-group input {
+    flex-grow: 1; /* 讓輸入框填滿空間 */
     font-size: 1em;
-    padding: 10px 15px;
+    padding: 8px;
+}
+
+select, input[type="text"] {
+    font-size: 1em;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+hr {
     border: none;
-    border-radius: 5px;
-    background-color: #3498db;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    border-top: 1px solid #eee;
+    width: 100%;
 }
 
-button:hover {
-    background-color: #2980b9;
-}
-
-button:disabled {
-    background-color: #95a5a6;
-    cursor: not-allowed;
-}
-
-#restart-button {
-    margin-top: 20px;
-    background-color: #e74c3c;
-}
-
-#restart-button:hover {
-    background-color: #c0392b;
+#game-info-frame p {
+    margin: 2px 0;
+    font-size: 1.1em;
 }
