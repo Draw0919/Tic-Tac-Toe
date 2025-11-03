@@ -8,16 +8,24 @@
 </head>
 <body>
 
-    <h1>MCTS 井字遊戲 (多人連線版)</h1>
-    <label id="status-label">正在連接到伺服器...</label>
+    <h1>MCTS 井字遊戲</h1>
+    <label id="status-label">正在載入...</label>
 
-    <div id="lobby-frame" class="setup-frame">
+    <div id="auth-frame" class="setup-frame">
+        <p>歡迎！請先登入以進入大廳</p>
+        <button id="btn-google-login">使用 Google 登入</button>
+    </div>
+
+    <div id="lobby-frame" class="setup-frame" style="display: none;">
+        <p>您好, <strong id="user-display-name">---</strong>!</p>
+        <hr>
         <label>讓 MCTS (AI) 幫您玩：</label>
         <select id="ai-difficulty-select">
             <option value="none">我不想用 AI (真人對戰)</option>
             <option value="簡單">簡單 (50 iter)</option>
             <option value="中等">中等 (500 iter)</option>
             <option value="困難">困難 (2000 iter)</option>
+            <option value="超困難">超困難 (10000 iter)</option>
         </select>
         <hr>
         <button id="btn-create-room">建立新房間</button>
@@ -31,7 +39,7 @@
     <div id="game-info-frame" class="setup-frame" style="display: none;">
         <p>房間 ID: <strong id="room-id-display">---</strong></p>
         <p>您的身分: <strong id="player-symbol-display">---</strong></p>
-    </div>
+        <p><strong id="game-vs-display">X vs O</strong></p> </div>
 
     <div id="board-frame">
         </div>
@@ -41,25 +49,23 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
     <script>
-        // *** 關鍵：貼上您的 firebaseConfig ***
-          const firebaseConfig = {
-          apiKey: "AIzaSyBGpa6CSfQByzuBmepn6DfCSUyTPQ0uBJg",
-          authDomain: "tic-tac-toe-b2a29.firebaseapp.com",
-          projectId: "tic-tac-toe-b2a29",
-          storageBucket: "tic-tac-toe-b2a29.firebasestorage.app",
-          messagingSenderId: "249530680186",
-          appId: "1:249530680186:web:f598810097b77f00d04cc3",
-          measurementId: "G-HE74554CJ0"
-          };
+        // *** 貼上您的 firebaseConfig ***
+        const firebaseConfig = {
+            apiKey: "AIza...", // (您自己的 config)
+            authDomain: "tic-tac-toe-b2a29.firebaseapp.com",
+            projectId: "tic-tac-toe-b2a29",
+            // ... (等等)
+        };
 
         // 初始化 Firebase
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); // 使用 Firestore
+        const db = firebase.firestore();
+        // *** 新增：初始化 Auth ***
+        const auth = firebase.auth(); 
     </script>
     
-    <script src="mcts.js"></script>
-    <script src="game.js"></script>
-</body>
+    <script src="mcts.js"></script> <script src="mcts_worker.js"></script> <script src="game.js"></script> </body>
 </html>
