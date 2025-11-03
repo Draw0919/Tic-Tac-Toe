@@ -61,6 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initializeBoardButtons() {
+        // *** 這是修復 BUG 3 (灰色棋盤) 的關鍵 ***
+        // 我們先清空棋盤，以防萬一
+        boardFrame.innerHTML = ''; 
+        
         for (let i = 0; i < 9; i++) {
             const button = document.createElement('button');
             button.classList.add('cell');
@@ -242,14 +246,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         roomIdDisplay.textContent = currentRoomId;
         playerSymbolDisplay.textContent = localPlayerSymbol;
+        
+        // *** 修復 BUG 3 (灰色棋盤)：確保棋盤按鈕在進入房間時被建立 ***
+        if (boardButtons.length === 0) {
+             initializeBoardButtons();
+        }
 
         if (unsubscribeGameListener) unsubscribeGameListener();
         unsubscribeGameListener = db.collection('games').doc(roomId)
             .onSnapshot((doc) => {
                 if (!doc.exists) {
-                    // 房主已離開 (或我們自己刪除了)
-                    // 我們不需要 alert，因為 leaveRoom() 已經被呼叫了
-                    return;
+                    return; // leaveRoom 已經被呼叫，不需要 alert
                 }
                 const oldBoard = [...state.board];
                 handleGameUpdate(doc.data(), oldBoard);
@@ -473,16 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. (非同步) 在背景執行緩慢的資料庫操作
         try {
             if (playerWhoLeft === 'X' && roomToLeave) {
-                // --- 我是玩家 X (房主) ---
-                // 我必須 *刪除* 整個房間
                 await db.collection('games').doc(roomToLeave).delete();
-                
             } else if (playerWhoLeft === 'O' && roomToLeave) {
-                // --- 我是玩家 O (加入者) ---
                 const roomRef = db.collection('games').doc(roomToLeave);
                 const doc = await roomRef.get();
-                if (doc.exists) { // 確保房間還在
-                    // 我必須 *重置* 房間，讓其他人可以加入
+                if (doc.exists) { 
                     await roomRef.update({
                         'players.O': null,
                         'status': 'waiting',
@@ -506,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- 程式進入點 (更新) ---
-    initializeBoardButtons();
+    initializeBoardButtons(); // *** 修復 BUG 3：確保按鈕在這裡被建立 ***
     initializeWorker();
     initializeAuth(); 
 });

@@ -67,22 +67,9 @@
             <button id="btn-play-again">再來一局</button>
             </div>
     </div>
-    
-    <div id="game-info-frame" class="setup-frame" style="display: none;">
-        <p>房間 ID: <strong id="room-id-display">---</strong></p>
-        <p>您的身分: <strong id="player-symbol-display">---</strong></p>
-        <p><strong id="game-vs-display">X vs O</strong></p> 
-        
-        <div id="game-over-buttons" style="display: none; margin-top: 10px; gap: 10px;">
-            <button id="btn-play-again">再來一局</button>
-            <button id="restart-button">離開房間</button>
-        </div>
-    </div>
 
     <div id="board-frame">
         </div>
-
-    <button id="restart-button" style="display: none;">離開房間 (回到大廳)</button>
 
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -90,27 +77,22 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
     <script>
-        // Your web app's Firebase configuration
+        // *** 您的 Firebase Config ***
         const firebaseConfig = {
-            apiKey: "AIzaSyBGpa6CSfQByzuBmepn6DfCSUyTPQ0uBJg",
-            authDomain: "tic-tac-toe-b2a29.firebaseapp.com",
-            projectId: "tic-tac-toe-b2a29",
-            storageBucket: "tic-tac-toe-b2a29.firebasestorage.app",
-            messagingSenderId: "249530680186",
-            appId: "1:249530680186:web:f598810097b77f00d04cc3",
-            measurementId: "G-HE74554CJ0"
-        };
-
-        // *** 正確的 'compat' 語法 ***
-        // 我們使用全域的 'firebase' 物件
+            apiKey: "AIzaSyBGpa6CSfQByzuBmepn6DfCSUyTPQ0uBJg",
+            authDomain: "tic-tac-toe-b2a29.firebaseapp.com",
+            projectId: "tic-tac-toe-b2a29",
+            storageBucket: "tic-tac-toe-b2a29.firebasestorage.app",
+            messagingSenderId: "249530680186",
+            appId: "1:249530680186:web:f598810097b77f00d04cc3",
+            measurementId: "G-HE74554CJ0"
+        };
         firebase.initializeApp(firebaseConfig);
-        
-        // *** 建立 'db' 和 'auth' 變數，讓 game.js 可以使用 ***
         const db = firebase.firestore();
-        const auth = firebase.auth();
+        const auth = firebase.auth(); 
     </script>
-
-    <script src="mcts.js"></script><script src="game.js"></script> 
-
-    </body> 
+    
+    <script src="mcts.js"></script>
+    <script src="game.js"></script> 
+</body> 
 </html>
